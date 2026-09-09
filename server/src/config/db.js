@@ -19,7 +19,10 @@ export const connectDB = async () => {
 
   try {
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
+      // Keep every environment on the shared application database even when
+      // MONGO_URI omits a database path.
+      dbName: 'mini_social_db'
     });
     console.log(`✅ MongoDB Connected Successfully: ${conn.connection.host}`);
     return conn;
