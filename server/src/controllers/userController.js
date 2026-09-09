@@ -34,41 +34,71 @@ export const toggleFollow = async (req, res) => {
       });
     }
 
+    const targetObjectId = new mongoose.Types.ObjectId(userId);
+    const currentObjectId = new mongoose.Types.ObjectId(req.user.id);
+
     const currentUser = await User.findById(req.user.id);
     const isCurrentlyFollowing = currentUser.following?.some(
-      (id) => id.toString() === userId.toString()
+      (id) => (id._id || id).toString() === userId.toString()
     );
 
-    let updatedUser;
+    let updatedCurrentUser;
+    let updatedTargetUser;
     let isFollowing;
 
     if (isCurrentlyFollowing) {
-      // Unfollow atomically
-      updatedUser = await User.findByIdAndUpdate(
+      // Unfollow atomically:
+      // Remove target user from current user's following list
+      updatedCurrentUser = await User.findByIdAndUpdate(
         req.user.id,
-        { $pull: { following: userId } },
+        { $pull: { following: targetObjectId } },
         { new: true }
       ).select('-password');
+
+      // Remove current user from target user's followers list
+      updatedTargetUser = await User.findByIdAndUpdate(
+        userId,
+        { $pull: { followers: currentObjectId } },
+        { new: true }
+      ).select('-password');
+
       isFollowing = false;
     } else {
-      // Follow atomically with $addToSet
-      updatedUser = await User.findByIdAndUpdate(
+      // Follow atomically with $addToSet:
+      // Add target user to current user's following list
+      updatedCurrentUser = await User.findByIdAndUpdate(
         req.user.id,
-        { $addToSet: { following: userId } },
+        { $addToSet: { following: targetObjectId } },
         { new: true }
       ).select('-password');
+
+      // Add current user to target user's followers list
+      updatedTargetUser = await User.findByIdAndUpdate(
+        userId,
+        { $addToSet: { followers: currentObjectId } },
+        { new: true }
+      ).select('-password');
+
       isFollowing = true;
     }
+
+    const following = updatedCurrentUser.following || [];
+    const targetFollowers = updatedTargetUser.followers || [];
 
     return res.status(200).json({
       success: true,
       isFollowing,
-      following: updatedUser.following || [],
-      followingCount: (updatedUser.following || []).length,
+      following,
+      followingCount: following.length,
+      followersCount: targetFollowers.length,
       targetUser: {
-        id: targetUser._id,
-        name: targetUser.name,
-        username: targetUser.username
+        id: updatedTargetUser._id,
+        _id: updatedTargetUser._id,
+        name: updatedTargetUser.name,
+        username: updatedTargetUser.username,
+        avatar: updatedTargetUser.avatar,
+        followersCount: targetFollowers.length,
+        followingCount: (updatedTargetUser.following || []).length
       }
     });
   } catch (error) {
@@ -81,23 +111,38 @@ export const toggleFollow = async (req, res) => {
 };
 
 /**
- * @desc    Get suggested users excluding the current user
+ * @desc    Get suggested users excluding the current user and already-followed users
  * @route   GET /api/users/suggestions
  * @access  Private
  */
 export const getSuggestedUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
+    const currentUser = await User.findById(currentUserId);
+    const followingIds = (currentUser?.following || []).map((id) => id.toString());
 
-    // Fetch up to 6 users other than current user
-    const suggestions = await User.find({ _id: { $ne: currentUserId } })
-      .select('name username avatar badge createdAt')
+    // Exclude current user and already followed users
+    const excludedIds = [currentUserId.toString(), ...followingIds];
+
+    // Fetch up to 6 users other than current user and already followed users
+    const suggestions = await User.find({ _id: { $nin: excludedIds } })
+      .select('name username avatar badge createdAt followers following')
       .sort({ createdAt: -1 })
       .limit(6);
 
     return res.status(200).json({
       success: true,
-      users: suggestions
+      users: suggestions.map((u) => ({
+        id: u._id,
+        _id: u._id,
+        name: u.name,
+        username: u.username,
+        avatar: u.avatar,
+        badge: u.badge,
+        createdAt: u.createdAt,
+        followersCount: (u.followers || []).length,
+        followingCount: (u.following || []).length
+      }))
     });
   } catch (error) {
     console.error('GetSuggestedUsers Error:', error);
@@ -207,7 +252,11 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId)
+      .select('-password')
+      .populate('following', '_id id name username avatar badge')
+      .populate('followers', '_id id name username avatar badge');
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -215,8 +264,10 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
-    // Count followers (other users whose `following` array contains this user's ID)
-    const followersCount = await User.countDocuments({ following: user._id });
+    const followers = (user.followers || []).filter(Boolean);
+    const following = (user.following || []).filter(Boolean);
+    const followersCount = followers.length;
+    const followingCount = following.length;
 
     // Fetch this user's posts
     const posts = await Post.find({ 'author.userId': user._id })
@@ -237,14 +288,17 @@ export const getUserProfile = async (req, res) => {
         email: user.email,
         avatar: user.avatar,
         badge: user.badge,
-        following: user.following || [],
+        followers,
+        following,
+        followersCount,
+        followingCount,
         createdAt: user.createdAt
       },
       stats: {
         totalPosts,
         totalLikesReceived,
         totalCommentsReceived,
-        followingCount: (user.following || []).length,
+        followingCount,
         followersCount
       },
       posts

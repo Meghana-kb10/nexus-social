@@ -73,18 +73,26 @@ export const signup = async (req, res) => {
     // 6. Generate JWT
     const token = generateToken(user);
 
+    const followers = user.followers || [];
+    const following = user.following || [];
+
     // 7. Return safe user info & token
     return res.status(201).json({
       success: true,
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
         badge: user.badge,
-        following: user.following || [],
-        createdAt: user.createdAt
+        followers,
+        following,
+        followersCount: followers.length,
+        followingCount: following.length,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       token
     });
@@ -137,18 +145,26 @@ export const login = async (req, res) => {
     // 4. Generate JWT
     const token = generateToken(user);
 
+    const followers = user.followers || [];
+    const following = user.following || [];
+
     // 5. Return safe user info & token
     return res.status(200).json({
       success: true,
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
         badge: user.badge,
-        following: user.following || [],
-        createdAt: user.createdAt
+        followers,
+        following,
+        followersCount: followers.length,
+        followingCount: following.length,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       token
     });
@@ -176,16 +192,23 @@ export const getMe = async (req, res) => {
       });
     }
 
+    const followers = user.followers || [];
+    const following = user.following || [];
+
     return res.status(200).json({
       success: true,
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
         badge: user.badge,
-        following: user.following || [],
+        followers,
+        following,
+        followersCount: followers.length,
+        followingCount: following.length,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }

@@ -88,24 +88,41 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Refresh authenticated user from database
+  const refreshUser = async () => {
+    try {
+      const res = await apiGetMe();
+      if (res?.success && res?.user) {
+        setUser(res.user);
+        try {
+          localStorage.setItem('user', JSON.stringify(res.user));
+        } catch {}
+        return res.user;
+      }
+    } catch (e) {
+      console.warn('refreshUser failed:', e.userMessage || e.message);
+    }
+  };
+
   // Follow / Unfollow handler
   const toggleFollowUser = async (targetUserId) => {
     if (!targetUserId) return;
-    const targetIdStr = (targetUserId._id || targetUserId).toString();
+    const targetIdStr = (targetUserId._id || targetUserId.id || targetUserId).toString();
     const isMongoId = /^[0-9a-fA-F]{24}$/.test(targetIdStr);
 
     if (!isMongoId) {
       // Optimistically toggle mock or spotlight creator
       setUser((prev) => {
         if (!prev) return prev;
-        const currentFollowing = (prev.following || []).map((f) => (f._id || f).toString());
+        const currentFollowing = (prev.following || []).map((f) => (f._id || f.id || f).toString());
         const isFollowing = currentFollowing.includes(targetIdStr);
         const nextFollowing = isFollowing
           ? currentFollowing.filter((id) => id !== targetIdStr)
           : [...currentFollowing, targetIdStr];
         const updated = {
           ...prev,
-          following: nextFollowing
+          following: nextFollowing,
+          followingCount: nextFollowing.length
         };
         try {
           localStorage.setItem('user', JSON.stringify(updated));
@@ -116,47 +133,35 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await apiToggleFollow(targetUserId);
+      const res = await apiToggleFollow(targetIdStr);
       if (res?.success) {
         setUser((prev) => {
           if (!prev) return prev;
           const updated = {
             ...prev,
-            following: res.following || []
+            following: res.following || [],
+            followingCount: res.followingCount !== undefined ? res.followingCount : (res.following || []).length
           };
           try {
             localStorage.setItem('user', JSON.stringify(updated));
           } catch {}
           return updated;
         });
+        // Also refresh complete user from database in background
+        refreshUser().catch(() => {});
         return res;
       }
+      return res;
     } catch (err) {
-      // Optimistic fallback on network error
-      setUser((prev) => {
-        if (!prev) return prev;
-        const currentFollowing = (prev.following || []).map((f) => (f._id || f).toString());
-        const isFollowing = currentFollowing.includes(targetIdStr);
-        const nextFollowing = isFollowing
-          ? currentFollowing.filter((id) => id !== targetIdStr)
-          : [...currentFollowing, targetIdStr];
-        const updated = {
-          ...prev,
-          following: nextFollowing
-        };
-        try {
-          localStorage.setItem('user', JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-      return { success: true };
+      console.error('Follow toggle error:', err.userMessage || err.message);
+      throw err;
     }
   };
 
   const isFollowingUser = useCallback((targetUserId) => {
     if (!user || !user.following || !targetUserId) return false;
-    const targetIdStr = (targetUserId._id || targetUserId).toString();
-    return user.following.some((fId) => (fId._id || fId).toString() === targetIdStr);
+    const targetIdStr = (targetUserId._id || targetUserId.id || targetUserId).toString();
+    return user.following.some((fId) => (fId._id || fId.id || fId).toString() === targetIdStr);
   }, [user]);
 
   const value = {
@@ -168,7 +173,8 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     toggleFollowUser,
-    isFollowingUser
+    isFollowingUser,
+    refreshUser
   };
 
   return (

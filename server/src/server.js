@@ -14,10 +14,17 @@ const PORT = process.env.PORT || 5000;
 
 // Enable Cross-Origin Resource Sharing (CORS)
 const rawClientUrl = process.env.CLIENT_URL || '';
-const allowedOrigins = rawClientUrl
+const configuredOrigins = rawClientUrl
   .split(',')
   .map((u) => u.trim().replace(/\/+$/, ''))
   .filter(Boolean);
+
+const allowedOrigins = [
+  ...configuredOrigins,
+  'https://nexus-social-ten.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
 app.use(
   cors({
@@ -28,17 +35,12 @@ app.use(
       // Normalize incoming origin by removing trailing slash
       const normalizedOrigin = origin.replace(/\/+$/, '');
 
-      // Allow local development
+      // Allow local development on any port
       if (normalizedOrigin.startsWith('http://localhost:') || normalizedOrigin.startsWith('http://127.0.0.1:')) {
         return callback(null, true);
       }
 
-      // If no CLIENT_URL configured, allow in development
-      if (allowedOrigins.length === 0) {
-        return callback(null, true);
-      }
-
-      // Check exact match in configured allowed origins
+      // Check match in configured allowed origins
       if (allowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true);
       }
@@ -74,7 +76,7 @@ app.get('/api/health', (req, res) => {
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Mini Social Post Application API is active',
+    message: 'NexusSocial API is active',
     healthCheck: '/api/health'
   });
 });
@@ -91,6 +93,21 @@ app.use((err, req, res, next) => {
 // Connect to Database and start listening
 const startServer = async () => {
   await connectDB();
+
+  // Non-destructive consistency check: ensure existing user docs have followers & following arrays initialized
+  try {
+    const User = (await import('./models/User.js')).default;
+    await User.updateMany(
+      { followers: { $exists: false } },
+      { $set: { followers: [] } }
+    );
+    await User.updateMany(
+      { following: { $exists: false } },
+      { $set: { following: [] } }
+    );
+  } catch (migErr) {
+    console.warn('Non-destructive migration check notice:', migErr.message);
+  }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server listening on http://0.0.0.0:${PORT}`);

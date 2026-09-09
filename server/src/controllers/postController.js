@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Post from '../models/Post.js';
+import User from '../models/User.js';
 
 /**
  * @desc    Create a new post
@@ -91,15 +92,27 @@ export const getFeed = async (req, res) => {
       ];
     }
 
+    // Filter by following if requested
+    if (filter === 'following') {
+      if (req.user?.id) {
+        const currentUser = await User.findById(req.user.id);
+        const followingIds = currentUser?.following || [];
+        query['author.userId'] = { $in: followingIds };
+      } else {
+        query['author.userId'] = { $in: [] };
+      }
+    }
+
     // Determine sorting criteria
     let sortQuery = { createdAt: -1 };
     if (filter === 'popular') {
       sortQuery = { likeCount: -1, createdAt: -1 };
-    } else if (filter === 'latest' || filter === 'all') {
+    } else if (filter === 'latest' || filter === 'all' || filter === 'following') {
       sortQuery = { createdAt: -1 };
     }
 
     const total = await Post.countDocuments(query);
+    const totalPages = Math.ceil(total / limit) || 1;
     const posts = await Post.find(query)
       .sort(sortQuery)
       .skip(skip)
@@ -112,6 +125,7 @@ export const getFeed = async (req, res) => {
         page,
         limit,
         total,
+        totalPages,
         hasMore: skip + posts.length < total
       }
     });

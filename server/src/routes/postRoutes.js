@@ -7,12 +7,12 @@ import {
   addComment,
   getTrendingHashtags
 } from '../controllers/postController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public routes
-router.get('/', getFeed);
+// Public routes (with optional auth on feed so logged-in users can filter by 'following')
+router.get('/', optionalAuth, getFeed);
 router.get('/trending/hashtags', getTrendingHashtags);
 router.get('/:id', getPostById);
 

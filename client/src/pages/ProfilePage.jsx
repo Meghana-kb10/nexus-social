@@ -24,6 +24,7 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+  const [activeTab, setActiveTab] = useState('posts');
 
   useEffect(() => {
     let isMounted = true;
@@ -104,13 +105,13 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
     return () => {
       isMounted = false;
     };
-  }, [targetUserId]);
+  }, [targetUserId, isOwnProfile ? (currentUser?.following || []).length : null]);
 
   const handleFollowClick = async () => {
     if (isUpdatingFollow || !targetUserId) return;
     setIsUpdatingFollow(true);
     try {
-      await toggleFollowUser(targetUserId);
+      const res = await toggleFollowUser(targetUserId);
       const targetIdStr = targetUserId.toString();
       if (targetIdStr.startsWith('spotlight-') || targetIdStr.startsWith('u_')) {
         setProfileData((prev) => {
@@ -127,8 +128,20 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
           };
         });
       } else {
-        const res = await getUserProfile(targetUserId);
-        if (res?.success) setProfileData(res);
+        if (res && res.followersCount !== undefined) {
+          setProfileData((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              stats: {
+                ...prev.stats,
+                followersCount: res.followersCount
+              }
+            };
+          });
+        }
+        const freshRes = await getUserProfile(targetUserId);
+        if (freshRes?.success) setProfileData(freshRes);
       }
     } catch (err) {
       console.error(err);
@@ -276,18 +289,42 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
             </div>
           </div>
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {stats?.followingCount ?? 0}
+          <div
+            style={{ textAlign: 'center', cursor: 'pointer' }}
+            onClick={() => setActiveTab('following')}
+            title="View following members"
+          >
+            <div
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                color: activeTab === 'following' ? 'var(--text-link)' : 'var(--text-primary)'
+              }}
+            >
+              {isOwnProfile
+                ? ((Array.isArray(currentUser?.following) ? currentUser.following.length : null) ?? currentUser?.followingCount ?? stats?.followingCount ?? (user?.following || []).length)
+                : (stats?.followingCount ?? (user?.following || []).length)}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Following
             </div>
           </div>
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {stats?.followersCount ?? 0}
+          <div
+            style={{ textAlign: 'center', cursor: 'pointer' }}
+            onClick={() => setActiveTab('followers')}
+            title="View followers"
+          >
+            <div
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                color: activeTab === 'followers' ? 'var(--text-link)' : 'var(--text-primary)'
+              }}
+            >
+              {isOwnProfile
+                ? ((Array.isArray(currentUser?.followers) ? currentUser.followers.length : null) ?? currentUser?.followersCount ?? stats?.followersCount ?? (user?.followers || []).length)
+                : (stats?.followersCount ?? (user?.followers || []).length)}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Followers
@@ -296,42 +333,225 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
         </div>
       </div>
 
-      {/* User's Posts Feed */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', padding: '0 4px' }}>
-          {isOwnProfile ? 'Your Posts' : `${user.name}'s Posts`} ({posts?.length || 0})
-        </h2>
-
-        {posts && posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard
-              key={post._id || post.id}
-              post={post}
-              onToggleLike={onToggleLike}
-              onAddComment={onAddComment}
-              onShare={onShare}
-            />
-          ))
-        ) : (
-          <div
-            style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '40px 20px',
-              textAlign: 'center',
-              color: 'var(--text-muted)'
-            }}
-          >
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-              No posts yet
-            </p>
-            <p style={{ fontSize: '0.82rem' }}>
-              {isOwnProfile ? 'Share your thoughts on the Home feed to see them here!' : 'This user has not published any posts.'}
-            </p>
-          </div>
-        )}
+      {/* Profile Section Filter Tabs */}
+      <div className="feed-filter-tabs" style={{ margin: '4px 0 0 0' }}>
+        <button
+          type="button"
+          className={`filter-tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('posts')}
+        >
+          Posts ({posts?.length || 0})
+        </button>
+        <button
+          type="button"
+          className={`filter-tab-btn ${activeTab === 'following' ? 'active' : ''}`}
+          onClick={() => setActiveTab('following')}
+        >
+          Following ({isOwnProfile
+            ? ((Array.isArray(currentUser?.following) ? currentUser.following.length : null) ?? currentUser?.followingCount ?? stats?.followingCount ?? (user?.following || []).length)
+            : (stats?.followingCount ?? (user?.following || []).length)})
+        </button>
+        <button
+          type="button"
+          className={`filter-tab-btn ${activeTab === 'followers' ? 'active' : ''}`}
+          onClick={() => setActiveTab('followers')}
+        >
+          Followers ({isOwnProfile
+            ? ((Array.isArray(currentUser?.followers) ? currentUser.followers.length : null) ?? currentUser?.followersCount ?? stats?.followersCount ?? (user?.followers || []).length)
+            : (stats?.followersCount ?? (user?.followers || []).length)})
+        </button>
       </div>
+
+      {/* Tab 1: Posts Stream */}
+      {activeTab === 'posts' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {posts && posts.length > 0 ? (
+            posts.map((post) => (
+              <PostCard
+                key={post._id || post.id}
+                post={post}
+                onToggleLike={onToggleLike}
+                onAddComment={onAddComment}
+                onShare={onShare}
+              />
+            ))
+          ) : (
+            <div
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: 'var(--text-muted)'
+              }}
+            >
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                No posts yet
+              </p>
+              <p style={{ fontSize: '0.82rem' }}>
+                {isOwnProfile ? 'Share your thoughts on the Home feed to see them here!' : 'This user has not published any posts.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 2: Following Members List */}
+      {activeTab === 'following' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {user.following && user.following.length > 0 ? (
+            user.following.map((fItem) => {
+              const fId = fItem._id || fItem.id || fItem;
+              const fName = typeof fItem === 'object' && fItem.name ? fItem.name : 'Member';
+              const fUsername = typeof fItem === 'object' && fItem.username ? fItem.username : 'user';
+              const fAvatar = typeof fItem === 'object' ? (fItem.avatar || '') : '';
+              const fBadge = typeof fItem === 'object' ? fItem.badge : null;
+              const isF = isFollowingUser(fId);
+
+              return (
+                <div
+                  key={fId.toString()}
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '14px',
+                    boxShadow: 'var(--shadow-card)'
+                  }}
+                >
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }}
+                    onClick={() => navigate(`/profile/${fId}`)}
+                  >
+                    <Avatar src={fAvatar} size={42} border />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{fName}</span>
+                        {fBadge && <Badge label={fBadge} />}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>@{fUsername}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`btn-follow ${isF ? 'following' : ''}`}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await toggleFollowUser(fId);
+                    }}
+                    style={{ padding: '6px 16px', fontSize: '0.82rem' }}
+                  >
+                    {isF ? 'Following' : '+ Follow'}
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <div
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: 'var(--text-muted)'
+              }}
+            >
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Not following anyone yet
+              </p>
+              <p style={{ fontSize: '0.82rem' }}>
+                {isOwnProfile ? 'Explore and follow other members across NexusSocial!' : 'This user is not following anyone yet.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 3: Followers List */}
+      {activeTab === 'followers' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {user.followers && user.followers.length > 0 ? (
+            user.followers.map((fItem) => {
+              const fId = fItem._id || fItem.id || fItem;
+              const fName = typeof fItem === 'object' && fItem.name ? fItem.name : 'Member';
+              const fUsername = typeof fItem === 'object' && fItem.username ? fItem.username : 'user';
+              const fAvatar = typeof fItem === 'object' ? (fItem.avatar || '') : '';
+              const fBadge = typeof fItem === 'object' ? fItem.badge : null;
+              const isF = isFollowingUser(fId);
+
+              return (
+                <div
+                  key={fId.toString()}
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '14px',
+                    boxShadow: 'var(--shadow-card)'
+                  }}
+                >
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }}
+                    onClick={() => navigate(`/profile/${fId}`)}
+                  >
+                    <Avatar src={fAvatar} size={42} border />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{fName}</span>
+                        {fBadge && <Badge label={fBadge} />}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>@{fUsername}</div>
+                    </div>
+                  </div>
+
+                  {(!currentUser || (currentUser.id || currentUser._id).toString() !== fId.toString()) && (
+                    <button
+                      type="button"
+                      className={`btn-follow ${isF ? 'following' : ''}`}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await toggleFollowUser(fId);
+                      }}
+                      style={{ padding: '6px 16px', fontSize: '0.82rem' }}
+                    >
+                      {isF ? 'Following' : '+ Follow'}
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: 'var(--text-muted)'
+              }}
+            >
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                No followers yet
+              </p>
+              <p style={{ fontSize: '0.82rem' }}>
+                {isOwnProfile ? 'Publish engaging posts on NexusSocial to grow your network!' : 'This user has no followers yet.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

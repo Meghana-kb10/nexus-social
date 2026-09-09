@@ -5,6 +5,7 @@ export const FeedFilterTabs = ({ activeFilter, onFilterChange }) => {
     { id: 'all', label: 'All Posts' },
     { id: 'latest', label: 'Latest' },
     { id: 'popular', label: 'Popular' },
+    { id: 'following', label: 'Following' },
   ];
 
   return (
