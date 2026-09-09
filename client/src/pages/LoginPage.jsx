@@ -12,6 +12,7 @@ export const LoginPage = ({ onSwitchToSignup }) => {
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoSigningIn, setIsDemoSigningIn] = useState(false);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -40,6 +41,18 @@ export const LoginPage = ({ onSwitchToSignup }) => {
       setError(err.userMessage || err.message || 'Invalid email or password');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    try {
+      setIsDemoSigningIn(true);
+      setError('');
+      await login({ demo: true });
+    } catch (err) {
+      setError(err.userMessage || err.message || 'Demo sign-in is unavailable. Please try again later.');
+    } finally {
+      setIsDemoSigningIn(false);
     }
   };
 
@@ -100,11 +113,23 @@ export const LoginPage = ({ onSwitchToSignup }) => {
           <button
             type="submit"
             className="btn-auth-submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDemoSigningIn}
           >
             {isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="auth-demo-section">
+          <span>or</span>
+        </div>
+        <button
+          type="button"
+          className="btn-auth-demo"
+          onClick={handleDemoLogin}
+          disabled={isSubmitting || isDemoSigningIn}
+        >
+          {isDemoSigningIn ? 'Signing in to demo...' : 'Try Demo Account'}
+        </button>
 
         {/* Footer Toggle */}
         <div className="auth-footer-toggle">

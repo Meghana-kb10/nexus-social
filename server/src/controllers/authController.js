@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { generateToken } from '../utils/tokenHelper.js';
+import { getDemoLoginCredentials } from '../utils/demoAccount.js';
 
 /**
  * @desc    Register a new user
@@ -112,7 +113,19 @@ export const signup = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const isDemoLogin = req.body?.demo === true;
+    let { email, password } = req.body;
+
+    if (isDemoLogin) {
+      const demoCredentials = getDemoLoginCredentials();
+      if (!demoCredentials) {
+        return res.status(503).json({
+          success: false,
+          message: 'Demo account is not available right now. Please try again later.'
+        });
+      }
+      ({ email, password } = demoCredentials);
+    }
 
     // 1. Validate input
     if (!email || !password) {

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
+import { ensureDemoAccount } from './utils/demoAccount.js';
 import authRoutes from './routes/authRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -92,7 +93,15 @@ app.use((err, req, res, next) => {
 
 // Connect to Database and start listening
 const startServer = async () => {
-  await connectDB();
+  const dbConnection = await connectDB();
+
+  if (dbConnection) {
+    try {
+      await ensureDemoAccount();
+    } catch (demoError) {
+      console.error(`Demo account setup error: ${demoError.message}`);
+    }
+  }
 
   // Non-destructive consistency check: ensure existing user docs have followers & following arrays initialized
   try {
