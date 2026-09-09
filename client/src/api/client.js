@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Resolve API base URL from Vite environment variable with safe fallback
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000/api';
+// Resolve API base URL from Vite environment variable with safe fallback and normalization
+const rawApiUrl = (import.meta.env?.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+const API_BASE_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`;
 
 /**
  * Reusable Axios client instance configured for JSON communication
@@ -11,7 +12,7 @@ const client = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000 // 10s request timeout
+  timeout: 60000 // 60s request timeout to comfortably accommodate Render cold-starts
 });
 
 /**

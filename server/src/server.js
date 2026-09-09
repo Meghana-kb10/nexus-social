@@ -13,18 +13,46 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Enable Cross-Origin Resource Sharing (CORS)
-const clientUrl = process.env.CLIENT_URL;
+const rawClientUrl = process.env.CLIENT_URL || '';
+const allowedOrigins = rawClientUrl
+  .split(',')
+  .map((u) => u.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: clientUrl
-      ? (origin, callback) => {
-          if (!origin || origin === clientUrl || origin.startsWith('http://localhost:')) {
-            callback(null, true);
-          } else {
-            callback(new Error(`Origin ${origin} not allowed by CORS`));
-          }
-        }
-      : true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, mobile apps, server-to-server, health checks)
+      if (!origin) return callback(null, true);
+
+      // Normalize incoming origin by removing trailing slash
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+
+      // Allow local development
+      if (normalizedOrigin.startsWith('http://localhost:') || normalizedOrigin.startsWith('http://127.0.0.1:')) {
+        return callback(null, true);
+      }
+
+      // If no CLIENT_URL configured, allow in development
+      if (allowedOrigins.length === 0) {
+        return callback(null, true);
+      }
+
+      // Check exact match in configured allowed origins
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview and production deployments if any vercel domain is configured
+      if (
+        normalizedOrigin.endsWith('.vercel.app') &&
+        (allowedOrigins.some((u) => u.includes('vercel.app')) || allowedOrigins.includes('*'))
+      ) {
+        return callback(null, true);
+      }
+
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true
   })
 );
