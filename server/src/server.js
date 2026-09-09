@@ -54,12 +54,21 @@ app.get('/', (req, res) => {
   });
 });
 
+// Global error handling middleware (prevents leaking stack traces in production)
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : (err.message || 'Internal Server Error')
+  });
+});
+
 // Connect to Database and start listening
 const startServer = async () => {
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server listening on http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server listening on http://0.0.0.0:${PORT}`);
     console.log(`🩺 Health check available at http://localhost:${PORT}/api/health`);
     console.log(`🔐 Auth routes mounted at http://localhost:${PORT}/api/auth`);
     console.log(`📝 Post routes mounted at http://localhost:${PORT}/api/posts`);
