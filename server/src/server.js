@@ -43,15 +43,12 @@ app.use(
         return callback(null, true);
       }
 
-      // Allow all Vercel preview and production deployments if any vercel domain is configured
-      if (
-        normalizedOrigin.endsWith('.vercel.app') &&
-        (allowedOrigins.some((u) => u.includes('vercel.app')) || allowedOrigins.includes('*'))
-      ) {
+      // Allow all Vercel preview and production deployments automatically
+      if (normalizedOrigin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
 
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
+      callback(null, false);
     },
     credentials: true
   })
