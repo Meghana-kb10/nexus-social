@@ -1,15 +1,23 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import User from '../models/User.js';
 
 const DEMO_USERNAME = 'demo_user';
 const DEMO_EMAIL = 'demo@nexussocial.local';
 
 const getDemoConfig = () => {
-  const password = process.env.DEMO_USER_PASSWORD;
+  const jwtSecret = process.env.JWT_SECRET;
 
-  if (!password || password.length < 6) {
+  if (!jwtSecret) {
     return null;
   }
+
+  // Derive a server-only credential from the existing authentication secret.
+  // The derived value is never returned to, or bundled with, the client.
+  const password = crypto
+    .createHash('sha256')
+    .update(`nexus-social-demo-account:${jwtSecret}`)
+    .digest('base64url');
 
   return {
     name: 'Nexus Demo',
@@ -22,18 +30,25 @@ const getDemoConfig = () => {
 export const ensureDemoAccount = async () => {
   const demo = getDemoConfig();
   if (!demo) {
-    console.warn('Demo account is disabled: DEMO_USER_PASSWORD is not configured.');
+    console.warn('Demo account is unavailable: JWT_SECRET is not configured.');
     return null;
   }
 
   const existing = await User.findOne({
     $or: [{ username: demo.username }, { email: demo.email }]
-  });
+  }).select('+password');
 
   if (existing) {
     if (existing.username !== demo.username || existing.email !== demo.email) {
       throw new Error('The configured demo account identifiers are already in use.');
     }
+
+    const hasExpectedPassword = await bcrypt.compare(demo.password, existing.password);
+    if (!hasExpectedPassword) {
+      existing.password = await bcrypt.hash(demo.password, 10);
+      await existing.save();
+    }
+
     return existing;
   }
 
