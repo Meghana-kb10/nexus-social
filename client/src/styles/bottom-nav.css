@@ -1,0 +1,83 @@
+/* Mobile Bottom Navigation Bar */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-nav-height);
+    background: rgba(13, 21, 39, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-subtle);
+    z-index: 50;
+    align-items: center;
+    justify-content: space-around;
+    padding: 4px 12px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    flex: 1;
+    padding: 6px 0;
+    transition: all var(--transition-fast);
+    position: relative;
+  }
+
+  .bottom-nav-item svg {
+    stroke: var(--text-muted);
+  }
+
+  .bottom-nav-item:hover,
+  .bottom-nav-item.active {
+    color: var(--accent-blue-light);
+  }
+
+  .bottom-nav-item.active svg {
+    stroke: var(--accent-blue-light);
+  }
+
+  /* Center "+" Create Post action button on mobile */
+  .bottom-nav-create-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--accent-blue);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -16px;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5);
+    border: 3px solid var(--bg-main);
+    transition: transform var(--transition-fast);
+  }
+
+  .bottom-nav-create-btn:active {
+    transform: scale(0.92);
+  }
+
+  .bottom-nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 16px);
+    width: 8px;
+    height: 8px;
+    background: var(--accent-blue);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--bg-main);
+  }
+}

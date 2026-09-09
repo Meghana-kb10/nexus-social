@@ -1,0 +1,11 @@
+{
+  "name": "mini-social-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "server": "npm --prefix server run dev",
+    "server:start": "npm --prefix server run start"
+  }
+}

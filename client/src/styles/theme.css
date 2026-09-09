@@ -1,0 +1,153 @@
+:root {
+  /* Color Palette - Dark Navy Theme */
+  --bg-main: #090e1a;
+  --bg-surface: #111a2e;
+  --bg-surface-elevated: #16223b;
+  --bg-surface-hover: #1a2947;
+  --bg-input: #0d1527;
+
+  /* Borders & Dividers */
+  --border-subtle: #1c2a47;
+  --border-card: rgba(255, 255, 255, 0.07);
+  --border-focus: #3b82f6;
+
+  /* Accent Colors */
+  --accent-blue: #2563eb;
+  --accent-blue-hover: #1d4ed8;
+  --accent-blue-light: #3b82f6;
+  --accent-blue-soft: rgba(37, 99, 235, 0.14);
+  --accent-blue-border: rgba(59, 130, 246, 0.45);
+  
+  /* Status & Accents */
+  --accent-gold: #f59e0b;
+  --accent-gold-soft: rgba(245, 158, 11, 0.12);
+  --accent-heart: #ef4444;
+  --accent-heart-soft: rgba(239, 68, 68, 0.12);
+  --accent-success: #10b981;
+
+  /* Typography Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-link: #60a5fa;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 8px 24px -4px rgba(0, 0, 0, 0.55);
+  --glow-blue-subtle: 0 0 14px rgba(37, 99, 235, 0.2);
+
+  /* Layout dimensions */
+  --header-height: 64px;
+  --sidebar-left-width: 240px;
+  --sidebar-right-width: 300px;
+  --feed-max-width: 640px;
+  --bottom-nav-height: 62px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+/* Classy Modern Light Theme */
+[data-theme="light"] {
+  --bg-main: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f8fafc;
+  --bg-surface-hover: #e2e8f0;
+  --bg-input: #f8fafc;
+
+  --border-subtle: #e2e8f0;
+  --border-card: rgba(0, 0, 0, 0.07);
+  --border-focus: #2563eb;
+
+  --accent-blue: #2563eb;
+  --accent-blue-hover: #1d4ed8;
+  --accent-blue-light: #3b82f6;
+  --accent-blue-soft: rgba(37, 99, 235, 0.08);
+  --accent-blue-border: rgba(37, 99, 235, 0.35);
+
+  --accent-gold: #d97706;
+  --accent-gold-soft: rgba(217, 119, 6, 0.1);
+  --accent-heart: #ef4444;
+  --accent-heart-soft: rgba(239, 68, 68, 0.08);
+  --accent-success: #059669;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-link: #2563eb;
+
+  --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+  --shadow-elevated: 0 8px 24px -4px rgba(15, 23, 42, 0.1);
+  --glow-blue-subtle: 0 0 12px rgba(37, 99, 235, 0.12);
+}
+
+/* Global Reset & Typography */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+input, textarea {
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+  border: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2b3d63;
+}

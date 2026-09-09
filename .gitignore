@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment files & secrets
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example
+
+# Production builds
+dist/
+dist-ssr/
+
+# Logs
+logs/
+*.log
+
+# Editor & System
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
