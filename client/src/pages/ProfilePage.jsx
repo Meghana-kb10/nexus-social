@@ -8,6 +8,8 @@ import { PostCard } from '../components/feed/PostCard';
 import { NexusOrb } from '../components/3d/NexusOrb';
 import { NexusSpinner3D } from '../components/3d/NexusSpinner3D';
 
+import { DEFAULT_SPOTLIGHTS, INITIAL_POSTS } from '../data/dummyData.js';
+
 export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
   const { userId: paramUserId } = useParams();
   const { user: currentUser, isFollowingUser, toggleFollowUser } = useAuth();
@@ -29,6 +31,61 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
       if (!targetUserId) return;
       setLoading(true);
       setError(null);
+
+      const targetIdStr = targetUserId.toString();
+      // Handle mock or spotlight creators
+      if (targetIdStr.startsWith('spotlight-') || targetIdStr.startsWith('u_')) {
+        const creator = DEFAULT_SPOTLIGHTS.find((s) => s.id === targetIdStr || s._id === targetIdStr) || {
+          name: 'Featured Creator',
+          username: targetIdStr,
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          badge: 'Creator 🌟',
+          bio: 'Nexus network featured creator and community member.'
+        };
+
+        const creatorPosts = INITIAL_POSTS.filter((p) => p.author?.username === creator.username);
+
+        if (isMounted) {
+          setProfileData({
+            success: true,
+            user: {
+              _id: targetIdStr,
+              name: creator.name,
+              username: creator.username,
+              avatar: creator.avatar,
+              badge: creator.badge,
+              bio: creator.bio,
+              createdAt: new Date().toISOString()
+            },
+            stats: {
+              postsCount: creatorPosts.length || 2,
+              followersCount: 1420,
+              followingCount: 96
+            },
+            posts: creatorPosts.length > 0 ? creatorPosts : [
+              {
+                id: `post_${targetIdStr}_1`,
+                _id: `post_${targetIdStr}_1`,
+                author: {
+                  _id: targetIdStr,
+                  id: targetIdStr,
+                  name: creator.name,
+                  username: creator.username,
+                  avatar: creator.avatar,
+                  badge: creator.badge
+                },
+                content: `Excited to connect with everyone on NexusSocial! Building real-time apps and fullstack systems with modern web tech. 🚀`,
+                createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+                likes: [],
+                comments: []
+              }
+            ]
+          });
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
         const res = await getUserProfile(targetUserId);
         if (isMounted && res?.success) {
@@ -54,9 +111,25 @@ export const ProfilePage = ({ onToggleLike, onAddComment, onShare }) => {
     setIsUpdatingFollow(true);
     try {
       await toggleFollowUser(targetUserId);
-      // Reload stats
-      const res = await getUserProfile(targetUserId);
-      if (res?.success) setProfileData(res);
+      const targetIdStr = targetUserId.toString();
+      if (targetIdStr.startsWith('spotlight-') || targetIdStr.startsWith('u_')) {
+        setProfileData((prev) => {
+          if (!prev) return prev;
+          const wasFollowing = isFollowingUser(targetUserId);
+          return {
+            ...prev,
+            stats: {
+              ...prev.stats,
+              followersCount: wasFollowing
+                ? Math.max(0, (prev.stats?.followersCount || 1) - 1)
+                : (prev.stats?.followersCount || 0) + 1
+            }
+          };
+        });
+      } else {
+        const res = await getUserProfile(targetUserId);
+        if (res?.success) setProfileData(res);
+      }
     } catch (err) {
       console.error(err);
     } finally {

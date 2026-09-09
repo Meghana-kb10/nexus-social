@@ -90,22 +90,67 @@ export const AuthProvider = ({ children }) => {
 
   // Follow / Unfollow handler
   const toggleFollowUser = async (targetUserId) => {
-    const res = await apiToggleFollow(targetUserId);
-    if (res?.success) {
+    if (!targetUserId) return;
+    const targetIdStr = (targetUserId._id || targetUserId).toString();
+    const isMongoId = /^[0-9a-fA-F]{24}$/.test(targetIdStr);
+
+    if (!isMongoId) {
+      // Optimistically toggle mock or spotlight creator
       setUser((prev) => {
         if (!prev) return prev;
+        const currentFollowing = (prev.following || []).map((f) => (f._id || f).toString());
+        const isFollowing = currentFollowing.includes(targetIdStr);
+        const nextFollowing = isFollowing
+          ? currentFollowing.filter((id) => id !== targetIdStr)
+          : [...currentFollowing, targetIdStr];
         const updated = {
           ...prev,
-          following: res.following || []
+          following: nextFollowing
         };
         try {
           localStorage.setItem('user', JSON.stringify(updated));
         } catch {}
         return updated;
       });
-      return res;
+      return { success: true };
     }
-    throw new Error(res?.message || 'Failed to update follow status');
+
+    try {
+      const res = await apiToggleFollow(targetUserId);
+      if (res?.success) {
+        setUser((prev) => {
+          if (!prev) return prev;
+          const updated = {
+            ...prev,
+            following: res.following || []
+          };
+          try {
+            localStorage.setItem('user', JSON.stringify(updated));
+          } catch {}
+          return updated;
+        });
+        return res;
+      }
+    } catch (err) {
+      // Optimistic fallback on network error
+      setUser((prev) => {
+        if (!prev) return prev;
+        const currentFollowing = (prev.following || []).map((f) => (f._id || f).toString());
+        const isFollowing = currentFollowing.includes(targetIdStr);
+        const nextFollowing = isFollowing
+          ? currentFollowing.filter((id) => id !== targetIdStr)
+          : [...currentFollowing, targetIdStr];
+        const updated = {
+          ...prev,
+          following: nextFollowing
+        };
+        try {
+          localStorage.setItem('user', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      return { success: true };
+    }
   };
 
   const isFollowingUser = useCallback((targetUserId) => {

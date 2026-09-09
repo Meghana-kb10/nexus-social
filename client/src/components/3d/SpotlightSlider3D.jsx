@@ -276,7 +276,9 @@ export const SpotlightSlider3D = () => {
           {items.map((item, index) => {
             const isActive = index === activeIndex;
             const itemId = item._id || item.id;
-            const isFollowing = isFollowingUser ? isFollowingUser(itemId) : isFollowingMap[itemId];
+            const isFollowing = isFollowingMap[itemId] !== undefined 
+              ? isFollowingMap[itemId] 
+              : (isFollowingUser ? isFollowingUser(itemId) : false);
 
             return (
               <div
@@ -298,9 +300,7 @@ export const SpotlightSlider3D = () => {
                     border={true}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (item._id && !item._id.startsWith('spotlight-')) {
-                        navigate(`/profile/${item._id}`);
-                      }
+                      navigate(`/profile/${itemId}`);
                     }}
                   />
                 </div>
@@ -310,9 +310,7 @@ export const SpotlightSlider3D = () => {
                   className="slider-card-name"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (item._id && !item._id.startsWith('spotlight-')) {
-                      navigate(`/profile/${item._id}`);
-                    }
+                    navigate(`/profile/${itemId}`);
                   }}
                 >
                   <span>{item.name}</span>
@@ -340,11 +338,7 @@ export const SpotlightSlider3D = () => {
                     className="slider-card-view-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (item._id && !item._id.startsWith('spotlight-')) {
-                        navigate(`/profile/${item._id}`);
-                      } else {
-                        setActiveIndex(index);
-                      }
+                      navigate(`/profile/${itemId}`);
                     }}
                   >
                     View

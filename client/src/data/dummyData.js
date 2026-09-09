@@ -1,3 +1,51 @@
+export const DEFAULT_SPOTLIGHTS = [
+  {
+    id: 'spotlight-1',
+    _id: 'spotlight-1',
+    name: 'Elena Rostova',
+    username: 'elena_arch',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    badge: 'Legend 👑',
+    bio: 'Senior Distributed Systems Engineer & Open Source Contributor.'
+  },
+  {
+    id: 'spotlight-2',
+    _id: 'spotlight-2',
+    name: 'Marcus Vance',
+    username: 'marcus_v',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    badge: 'Platinum 💠',
+    bio: 'WebGL & Three.js creative developer exploring spatial interactions.'
+  },
+  {
+    id: 'spotlight-3',
+    _id: 'spotlight-3',
+    name: 'Sophia Chen',
+    username: 'sophia_ai',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    badge: 'Member',
+    bio: 'AI Safety researcher and fullstack product builder.'
+  },
+  {
+    id: 'spotlight-4',
+    _id: 'spotlight-4',
+    name: 'Devin Thorne',
+    username: 'devin_t',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    badge: 'Gold ⭐',
+    bio: 'UI Systems architect focusing on accessibility & micro-animations.'
+  },
+  {
+    id: 'spotlight-5',
+    _id: 'spotlight-5',
+    name: 'Aria Thorne',
+    username: 'aria_dev',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    badge: 'Pro ⚡',
+    bio: 'Fullstack developer exploring real-time decentralized webs.'
+  }
+];
+
 export const CURRENT_USER = {
   id: 'u_curr_01',
   name: 'Alex Rivera',
