@@ -37,6 +37,58 @@ Nexus Social is a mini social-media platform inspired by the provided TaskMaster
 - Light/dark theme switching, loading, validation, empty, error, and toast states
 - Responsive desktop, tablet, and mobile layouts with desktop sidebar and mobile bottom navigation
 
+## 🖼️ Application walkthrough
+
+The following screenshots are ordered chronologically from login through the main social features.
+
+### 1. Login and demo access
+
+The Nexus Social login page provides credential fields, a standard sign-in action, and the **Try Demo Account** option.
+
+![Login page with demo sign-in](docs/screenshots/01-login-page.png)
+
+### 2. Login validation feedback
+
+Invalid login credentials display a clear inline error while preserving the entered form values for correction.
+
+![Login validation error](docs/screenshots/02-login-validation.png)
+
+### 3. Account registration
+
+The signup page collects a name, username, email address, and password in the same responsive dark-theme authentication layout.
+
+![Create account page](docs/screenshots/03-signup-page.png)
+
+### 4. Home feed and post creation
+
+The authenticated home view combines the post composer, image attachment control, feed filters, public posts, user suggestions, and trending topics.
+
+![Home feed with create-post card](docs/screenshots/04-home-feed-create-post.png)
+
+### 5. Post interactions
+
+Post cards support likes, comments, sharing, and inline comment composition alongside image content.
+
+![Post comments and interactions](docs/screenshots/05-post-comments.png)
+
+### 6. Comment thread
+
+Comments appear below the post with the commenter’s username, relative time, and the updated interaction counts.
+
+![Post comment thread](docs/screenshots/06-post-comment-thread.png)
+
+### 7. Explore and creator discovery
+
+The Explore page presents trending topic filters, suggested users, and a Three.js-inspired spotlight creator deck.
+
+![Explore page and spotlight creators](docs/screenshots/07-explore-spotlight-creators.png)
+
+### 8. Profile and following list
+
+The profile page shows account details, engagement statistics, follower/following totals, and an interactive following list.
+
+![Profile following list](docs/screenshots/08-profile-following-list.png)
+
 ## 🎨 Frontend
 
 The frontend is built with **React** and **Vite**, using React Router for navigation and Axios for API communication. Reusable components cover authentication, layouts, feed creation, post cards, shared UI, widgets, and profile views.
