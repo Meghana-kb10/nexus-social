@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { PhotoIcon, SmileIcon, SendIcon } from '../common/Icons';
 import { Avatar } from '../common/Avatar';
 import { useAuth } from '../../context/AuthContext';
@@ -7,13 +7,14 @@ import { createPost } from '../../api/postApi';
 export const CreatePostCard = ({ onAddPost, inputRef }) => {
   const { user } = useAuth();
   const [postText, setPostText] = useState('');
-  const [showImageInput, setShowImageInput] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
+  const [imageName, setImageName] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedFeeling, setSelectedFeeling] = useState('');
   const [showFeelingsPicker, setShowFeelingsPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const imageInputRef = useRef(null);
 
   const feelingsList = ['😊 Happy', '🔥 Motivated', '🚀 Excited', '😴 Tired', '🎉 Celebrating', '💻 Coding'];
 
@@ -57,7 +58,7 @@ export const CreatePostCard = ({ onAddPost, inputRef }) => {
         onAddPost(response.post);
         setPostText('');
         setImageUrl('');
-        setShowImageInput(false);
+        setImageName('');
         setSelectedFeeling('');
         setError('');
       }
@@ -67,6 +68,32 @@ export const CreatePostCard = ({ onAddPost, inputRef }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleImageSelection = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      setError('Image must be 3 MB or smaller.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(typeof reader.result === 'string' ? reader.result : '');
+      setImageName(file.name);
+      setError('');
+    };
+    reader.onerror = () => setError('Could not read that image. Please try another file.');
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -109,32 +136,15 @@ export const CreatePostCard = ({ onAddPost, inputRef }) => {
             rows={2}
           />
 
-          {/* Optional Image Input Bar */}
-          {showImageInput && (
-            <div className="create-post-image-input">
-              <input
-                type="url"
-                placeholder="Paste image URL (e.g. Unsplash link)..."
-                aria-label="Image URL input"
-                className="image-url-field"
-                value={imageUrl}
-                onChange={(e) => {
-                  setImageUrl(e.target.value);
-                  if (error) setError('');
-                }}
-              />
-              {imageUrl && (
-                <button
-                  type="button"
-                  className="remove-image-btn"
-                  aria-label="Remove image"
-                  onClick={() => setImageUrl('')}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          )}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            aria-label="Choose an image to attach"
+            tabIndex={-1}
+            style={{ display: 'none' }}
+            onChange={handleImageSelection}
+          />
 
           {/* Error Message Display */}
           {error && (
@@ -161,7 +171,7 @@ export const CreatePostCard = ({ onAddPost, inputRef }) => {
             <div className="image-preview-box">
               <img
                 src={imageUrl}
-                alt="Upload preview"
+                alt={imageName ? `Preview of ${imageName}` : 'Upload preview'}
                 className="image-preview-img"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -170,7 +180,11 @@ export const CreatePostCard = ({ onAddPost, inputRef }) => {
               <button
                 type="button"
                 className="remove-image-btn"
-                onClick={() => setImageUrl('')}
+                aria-label="Remove selected image"
+                onClick={() => {
+                  setImageUrl('');
+                  setImageName('');
+                }}
               >
                 ✕
               </button>
@@ -216,7 +230,7 @@ export const CreatePostCard = ({ onAddPost, inputRef }) => {
           <button
             type="button"
             className="action-trigger-btn"
-            onClick={() => setShowImageInput(!showImageInput)}
+            onClick={() => imageInputRef.current?.click()}
             title="Add Photo"
           >
             <PhotoIcon size={18} />

@@ -14,6 +14,23 @@ export const createPost = async (req, res) => {
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
     const trimmedImageUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
 
+    if (trimmedImageUrl.startsWith('data:')) {
+      const isSupportedImage = /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(trimmedImageUrl);
+      if (!isSupportedImage) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a supported image file.'
+        });
+      }
+
+      if (trimmedImageUrl.length > 4.5 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message: 'Image must be 3 MB or smaller.'
+        });
+      }
+    }
+
     // Validate that at least one of content or imageUrl is provided
     if (!trimmedContent && !trimmedImageUrl) {
       return res.status(400).json({
